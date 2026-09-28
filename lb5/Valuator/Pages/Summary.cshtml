@@ -1,0 +1,17 @@
+﻿@page
+@model Valuator.Pages.SummaryModel
+@{ ViewData["Title"] = "Результат проверки"; }
+<section id="evaluation" data-text-id="@Model.TextId" data-completed="@(Model.Rank.HasValue ? "true" : "false")" aria-live="polite">
+    <p id="pending" hidden="@Model.Rank.HasValue">Оценка содержания не завершена</p>
+    <div id="result" hidden="@(!Model.Rank.HasValue)">
+        <p>Оценка содержания: <span id="rank">@Model.Rank</span></p>
+        <p>Обработчик: <span id="worker">@Model.Worker</span></p>
+    </div>
+    <p>Плагиат: <span id="similarity">@Model.Similarity</span></p>
+    <p id="connection-status" role="status">Подключение уведомлений…</p>
+    <noscript>Для автоматического получения результата включите JavaScript.</noscript>
+</section>
+@section Scripts {
+    <script src="~/lib/signalr/signalr.min.js" asp-append-version="true"></script>
+    <script src="~/js/summary.js" asp-append-version="true"></script>
+}

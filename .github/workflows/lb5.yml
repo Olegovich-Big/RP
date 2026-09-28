@@ -1,0 +1,58 @@
+name: Lab 5 validation
+on:
+  push:
+    paths:
+      - 'lb5/**'
+      - '.github/workflows/lb5.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: lb5
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unit tests
+        run: dotnet test ds-2024.sln -c Release
+      - name: Browser dependencies and JavaScript unit test
+        working-directory: lb5/browser-tests
+        run: |
+          npm ci --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run test:unit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npx playwright install --with-deps chromium
+      - name: Start complete lab
+        run: ./scripts/start.ps1 -Workers 2
+      - name: Actual browser WebSockets, multiple replicas and reconnection
+        working-directory: lb5/browser-tests
+        run: npm test
+      - name: Async processing, pub/sub and failover
+        run: ./scripts/test.ps1 -TestAsync -TestEvents -TestFailover
+      - name: Browser test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lb5-browser-results
+          path: |
+            lb5/browser-tests/test-results
+            lb5/browser-tests/playwright-report
+      - name: Logs
+        if: always()
+        run: docker compose logs --no-color --tail 150
+      - name: Stop
+        if: always()
+        run: ./scripts/stop.ps1

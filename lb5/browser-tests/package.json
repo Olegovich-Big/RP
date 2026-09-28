@@ -1,0 +1,15 @@
+{
+  "name": "valuator-pa5-browser-tests",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "vendor": "node vendor.cjs",
+    "test:unit": "node --test summary.unit.cjs"
+  },
+  "dependencies": {
+    "@microsoft/signalr": "8.0.29"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}
