@@ -1,0 +1,23 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Главная";
+}
+
+<div class="text-center">
+    <form method="post">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <label asp-for="Country">Страна гражданства</label>
+        <select asp-for="Country">
+            @foreach (var country in Valuator.Shared.Countries.Regions.Keys)
+            {
+                <option value="@country">@country</option>
+            }
+        </select>
+        <div class="col-2">Текст для оценки:</div>
+        <div class="col-10">
+            <textarea asp-for="Text" rows="5" cols="50"></textarea>
+            <input type="submit" />
+        </div>
+    </form>
+</div>

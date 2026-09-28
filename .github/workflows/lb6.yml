@@ -1,0 +1,44 @@
+name: Lab 6 validation
+on:
+  push:
+    paths:
+      - 'lb6/**'
+      - '.github/workflows/lb6.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: lb6
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Start four independent Redis servers
+        run: docker compose up -d --wait redis-main redis-ru redis-eu redis-asia
+      - name: Unit and real Redis sharding tests
+        env:
+          VALUATOR_TEST_SHARDS: '1'
+          DB_MAIN: localhost:6000
+          DB_RU: localhost:6001
+          DB_EU: localhost:6002
+          DB_ASIA: localhost:6003
+        run: dotnet test ds-2024.sln -c Release
+      - name: Start web, workers and two event subscribers
+        run: ./scripts/start.ps1 -Workers 2 -ProcessingDelayMs 250
+      - name: Sharding, async processing, pub/sub and failover
+        run: ./scripts/test.ps1 -TestShards -TestAsync -TestEvents -TestFailover
+      - name: Logs
+        if: always()
+        run: docker compose logs --no-color --tail 150
+      - name: Stop
+        if: always()
+        run: ./scripts/stop.ps1
