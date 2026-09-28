@@ -175,7 +175,9 @@ try {
         function Read-Redis([string]$Region, [string[]]$Arguments) {
             $output = & docker compose -f (Join-Path $labRoot 'compose.yaml') exec -T ("redis-" + $Region.ToLowerInvariant()) redis-cli --raw @Arguments
             if ($LASTEXITCODE -ne 0) { throw "Redis query failed for $Region" }
-            return ($output -join "`n").Trim()
+            $value = ($output -join "`n").Trim()
+            if ($value -match '^ERR ') { throw "Redis command failed: $value" }
+            return $value
         }
         $regionalText = 'All countries ' + [Guid]::NewGuid()
         $expectedRank = [regex]::Matches($regionalText, '[^a-zA-Zа-яА-ЯёЁ]').Count / [double]$regionalText.Length
@@ -221,7 +223,7 @@ try {
                 }
             }
         }
-        $keys = (Read-Redis 'MAIN' @('KEYS', '*')) -split "`n"
+        $keys = (Read-Redis 'MAIN' @('--scan')) -split "`n"
         foreach ($key in $keys) {
             $parsed = [Guid]::Empty
             if (-not [Guid]::TryParse($key, [ref]$parsed)) { throw "Unexpected MAIN key: $key" }
