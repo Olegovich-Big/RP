@@ -1,0 +1,61 @@
+name: Lab 7 validation
+on:
+  push:
+    paths:
+      - 'lb7/**'
+      - '.github/workflows/lb7.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: lb7
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Configure local passwords and start protected Redis
+        run: |
+          ./scripts/init-env.ps1
+          docker compose up -d --wait redis
+      - name: Unit and Redis account/ownership tests
+        run: ./scripts/test-unit.ps1 -WithRedis
+      - name: Install browser dependencies
+        working-directory: lb7/browser-tests
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Start authenticated middleware and application
+        run: ./scripts/start.ps1 -Workers 2 -ProcessingDelayMs 250
+      - name: Redis and RabbitMQ reject invalid credentials
+        run: python scripts/test-middleware.py
+      - name: Browser registration, login, ownership, replicas and forgery checks
+        working-directory: lb7/browser-tests
+        run: npm test
+      - name: Async processing, pub/sub and failover with authenticated user
+        run: ./scripts/test.ps1 -TestAsync -TestEvents -TestFailover
+      - name: Browser diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lb7-browser-diagnostics
+          path: |
+            lb7/browser-tests/test-results
+            lb7/browser-tests/playwright-report
+      - name: Logs
+        if: always()
+        run: docker compose logs --no-color --tail 100
+      - name: Stop
+        if: always()
+        run: ./scripts/stop.ps1

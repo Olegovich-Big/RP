@@ -1,0 +1,13 @@
+@page
+@model Valuator.Pages.Account.RegisterModel
+@{ ViewData["Title"] = "Регистрация"; }
+<h1>Регистрация</h1>
+<p>Логин: 3–32 латинские буквы, цифры или знак _. Пароль: 8–128 символов.</p>
+<form method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div class="mb-3"><label asp-for="Login">Логин</label><input asp-for="Login" class="form-control" autocomplete="username" maxlength="32" /></div>
+    <div class="mb-3"><label asp-for="Password">Пароль</label><input asp-for="Password" type="password" class="form-control" autocomplete="new-password" maxlength="128" /></div>
+    <div class="mb-3"><label asp-for="ConfirmPassword">Повторите пароль</label><input asp-for="ConfirmPassword" type="password" class="form-control" autocomplete="new-password" maxlength="128" /></div>
+    <button class="btn btn-primary" type="submit">Зарегистрироваться</button>
+</form>
+<p><a asp-page="/Account/Login">Уже есть аккаунт? Войти</a></p>
