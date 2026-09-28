@@ -1,0 +1,16 @@
+﻿@page
+@model Valuator.Pages.SummaryModel
+@{
+}
+@if (Model.Rank.HasValue)
+{
+    <p>Оценка содержания: <span id="rank">@Model.Rank</span></p>
+    <p>Обработчик: <span id="worker">@Model.Worker</span></p>
+}
+else
+{
+    <p id="pending">Оценка содержания не завершена</p>
+    <p>Страница обновится автоматически.</p>
+    <script>setTimeout(() => window.location.reload(), 2000);</script>
+}
+<p>Плагиат: <span id="similarity">@Model.Similarity</span></p>
