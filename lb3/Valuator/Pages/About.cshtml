@@ -1,0 +1,10 @@
+﻿@page
+@model AboutModel
+@inject IConfiguration Configuration
+@{
+    ViewData["Title"] = "Об авторе";
+}
+<h1>@ViewData["Title"]</h1>
+
+<p>Студент: @(Configuration["Author:Name"] ?? "Не указано")</p>
+<p>Группа: @(Configuration["Author:Group"] ?? "Не указана")</p>

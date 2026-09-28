@@ -1,0 +1,36 @@
+name: Lab 3 validation
+on:
+  push:
+    paths:
+      - 'lb3/**'
+      - '.github/workflows/lb3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: lb3
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Unit tests
+        run: dotnet test ds-2024.sln -c Release
+      - name: Start two web replicas and two workers
+        run: ./scripts/start.ps1 -Workers 2 -ProcessingDelayMs 250
+      - name: Async processing, competing consumers and web failover
+        run: ./scripts/test.ps1 -TestAsync -TestFailover
+      - name: Logs
+        if: always()
+        run: docker compose logs --no-color --tail 150
+      - name: Stop
+        if: always()
+        run: ./scripts/stop.ps1
