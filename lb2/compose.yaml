@@ -1,0 +1,71 @@
+name: rp-lb2
+
+x-app: &app
+  build:
+    context: .
+    dockerfile: Valuator/Dockerfile
+  environment: &environment
+    ConnectionStrings__Redis: redis:6379,abortConnect=false
+    DataProtection__KeyPath: /keys
+    ASPNETCORE_ENVIRONMENT: Production
+  volumes:
+    - shared-keys:/keys
+  depends_on:
+    redis:
+      condition: service_healthy
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  app1:
+    <<: *app
+    environment:
+      <<: *environment
+      ASPNETCORE_URLS: http://+:5001
+      InstanceName: app1
+    ports:
+      - "127.0.0.1:5001:5001"
+
+  app2:
+    <<: *app
+    environment:
+      <<: *environment
+      ASPNETCORE_URLS: http://+:5002
+      InstanceName: app2
+    ports:
+      - "127.0.0.1:5002:5002"
+
+  app3:
+    <<: *app
+    profiles: [extra]
+    environment:
+      <<: *environment
+      ASPNETCORE_URLS: http://+:5003
+      InstanceName: app3
+    ports:
+      - "127.0.0.1:5003:5003"
+
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf/${LB_METHOD:-round_robin}.conf:/etc/nginx/balancing.conf:ro
+      - ./nginx/conf/${LB_REPLICAS:-two}.conf:/etc/nginx/extra-servers.conf:ro
+    depends_on:
+      - app1
+      - app2
+
+volumes:
+  redis-data:
+  shared-keys:
