@@ -1,6 +1,9 @@
-
-bin/
-obj/
-
-/.vscode/
-/.idea/
+**/bin/
+**/obj/
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+.env
+.env.*
